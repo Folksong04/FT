@@ -180,7 +180,7 @@ footer{text-align:center;color:var(--muted);margin-top:24px;font-size:.85rem}
     <span class="heart">♥</span>
     <h2>FT</h2>
     <div class="muted">ใส่รหัสผ่านเพื่อเข้าดูข้อมูล</div>
-    <input type="password" id="pin" inputmode="numeric" autocomplete="current-password" placeholder="••••" autofocus>
+    <input type="password" id="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" autofocus>
     <button class="btn primary" type="submit" id="pinBtn">เข้าสู่เว็บ ♥</button>
     <div class="err" id="pinErr"></div>
   </form>
@@ -249,51 +249,25 @@ footer{text-align:center;color:var(--muted);margin-top:24px;font-size:.85rem}
 
       <div class="card">
         <h3>ข้อมูล</h3>
-        <div class="view-only">
-          <div class="muted">ทุกคนที่มีลิงก์เห็นข้อมูลชุดเดียวกัน (อ่านอย่างเดียว)</div>
-          <div class="row" style="margin-top:10px">
-            <button class="btn" id="btnReload">↻ โหลดข้อมูลล่าสุด</button>
-            <button class="btn ghost" id="btnEdit">✎ เจ้าของเว็บ: แก้ไข</button>
-            <button class="btn ghost" id="btnLock">🔒 ล็อก</button>
-          </div>
+        <div class="muted">ทุกคนที่ใส่รหัสผ่านเห็นและแก้ไขข้อมูลชุดเดียวกัน ระบบโหลดข้อมูลใหม่ให้ทุก 30 วินาที</div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="btnReload">↻ โหลดข้อมูลล่าสุด</button>
+          <button class="btn edit-only hidden" id="btnExport">⬇ สำรอง data.json</button>
+          <button class="btn edit-only hidden" id="btnImport">⬆ นำเข้า</button>
+          <button class="btn ghost edit-only hidden" id="btnClear">ล้างทั้งหมด</button>
+          <button class="btn ghost" id="btnLock">🔒 ล็อก</button>
+          <input type="file" id="file" accept=".json" class="hidden">
         </div>
-        <div class="edit-only hidden">
-          <div class="row">
-            <button class="btn" id="btnExport">⬇ ดาวน์โหลด data.json</button>
-            <button class="btn" id="btnImport">⬆ นำเข้า</button>
-            <button class="btn ghost" id="btnClear">ล้างทั้งหมด</button>
-            <button class="btn ghost" id="btnExit">ออกจากโหมดแก้ไข</button>
-            <input type="file" id="file" accept=".json" class="hidden">
-          </div>
-          <div class="status" id="status"></div>
-        </div>
+        <div class="status" id="status"></div>
       </div>
     </aside>
   </div>
   <footer>FT · Made with ♥</footer>
 </div>
 
-<dialog id="dlg">
-  <h3>✎ โหมดแก้ไข (เจ้าของเว็บ)</h3>
-  <div class="muted">ใส่ GitHub token เพื่อให้กดติ๊กแล้วบันทึกขึ้น GitHub ทันที ทุกคนจะเห็นข้อมูลใหม่ภายในประมาณ 1 นาที
-    token จะถูกเก็บไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น</div>
-  <label>Repository (ชื่อผู้ใช้/ชื่อ repo)</label>
-  <input type="text" id="ghRepo" placeholder="username/repo">
-  <label>Branch</label>
-  <input type="text" id="ghBranch" value="main">
-  <label>GitHub token (Fine-grained, สิทธิ์ Contents: Read and write เฉพาะ repo นี้)</label>
-  <input type="password" id="ghToken" placeholder="github_pat_...">
-  <div class="row" style="margin-top:16px;justify-content:flex-end">
-    <button class="btn ghost" id="dlgCancel">ยกเลิก</button>
-    <button class="btn" id="dlgLocal" title="แก้ในเครื่อง แล้วดาวน์โหลด data.json ไปอัปโหลดเอง">แก้ในเครื่อง</button>
-    <button class="btn primary" id="dlgOk">เชื่อม GitHub</button>
-  </div>
-</dialog>
 <div class="toast" id="toast"></div>
 
 <script>
-const LOCAL_KEY = 'ft.data';
-const GH_KEY = 'ft.github';
 const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const DOW = ['อา','จ','อ','พ','พฤ','ศ','ส'];
@@ -308,39 +282,10 @@ const todayIso = () => { const d = new Date(); return iso(d.getFullYear(), d.get
 const fmt = s => { const [a, b, c] = s.split('-').map(Number); return `${c} ${SHORT[b - 1]} ${a + 543}`; };
 const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
 const daysIn = (y, m) => new Date(y, m + 1, 0).getDate();
-const b64enc = s => btoa(unescape(encodeURIComponent(s)));
-const b64dec = s => decodeURIComponent(escape(atob(s.replace(/\s/g, ''))));
-
-/* ---------- encryption (AES-GCM, key = PBKDF2-SHA256 of the password) ---------- */
-const PASS_KEY = 'ft.pass';
-const ITER = 250000;
-const te = new TextEncoder(), td = new TextDecoder();
-let pass = sessionStorage.getItem(PASS_KEY) || '';
-const toB64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); };
-const fromB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
-const isEnc = j => j && typeof j.ct === 'string' && typeof j.iv === 'string' && typeof j.salt === 'string';
-class WrongPass extends Error {}
-
-async function deriveKey(pw, salt, iter) {
-  const base = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base,
-    { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-}
-async function encryptData(obj) {
-  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKey(pass, salt, ITER);
-  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, te.encode(JSON.stringify(obj))));
-  return { v: 1, kdf: 'PBKDF2-SHA256', iter: ITER, salt: toB64(salt), iv: toB64(iv), ct: toB64(ct) };
-}
-async function decryptData(j) {
-  if (!isEnc(j)) throw new Error('data.json ไม่ได้เข้ารหัส');
-  try {
-    const key = await deriveKey(pass, fromB64(j.salt), j.iter || ITER);
-    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(j.iv) }, key, fromB64(j.ct));
-    return normalize(JSON.parse(td.decode(pt)));
-  } catch (e) { throw new WrongPass('รหัสผ่านไม่ถูกต้อง'); }
-}
-async function encryptedText() { return JSON.stringify(await encryptData(data), null, 2) + '\n'; }
+/* ---------- Google Sheet backend (Apps Script web app, same setup as the grandma health site) ---------- */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzS9y9Z_BwJIn3W0HJ0PoNGg1yJTECWPpucZw6TTf0ZTIr9hohIRpNbPwNlfrbN8PVZJQ/exec';
+const PIN_KEY = 'ft.pin';
+const POLL_MS = 30000;
 
 let data = { periods: [] };
 const now = new Date();
@@ -348,64 +293,55 @@ let view = { y: now.getFullYear(), m: now.getMonth() };
 let mode = 'start';
 let yearMode = false;
 let editing = false;
-let gh = readGh();
-let ghSha = null;
+let pin = sessionStorage.getItem(PIN_KEY) || '';
+let inFlight = 0;
+let chain = Promise.resolve();
+let lastSync = null;
 
 function normalize(d) {
   if (!d || !Array.isArray(d.periods)) return { periods: [] };
   return { periods: d.periods.filter(p => p && /^\d{4}-\d{2}-\d{2}$/.test(p.s)).map(p => ({ s: p.s, e: /^\d{4}-\d{2}-\d{2}$/.test(p.e) ? p.e : null })) };
 }
-function readGh() { try { return JSON.parse(localStorage.getItem(GH_KEY)); } catch (e) { return null; } }
 function sorted() { return data.periods.sort((a, b) => a.s < b.s ? -1 : 1); }
 function endOf(p) { if (p.e) return p.e; const t = todayIso(); return t > p.s ? t : p.s; }
 function periodAt(d) { return data.periods.find(p => d >= p.s && d <= endOf(p)); }
 function lenOf(p) { return diff(p.s, endOf(p)) + 1; }
+const hhmm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
-/* ---------- data loading / saving ---------- */
-function ghHeaders() { return { Authorization: 'Bearer ' + gh.token, Accept: 'application/vnd.github+json' }; }
-function ghUrl() { return `https://api.github.com/repos/${gh.repo}/contents/data.json`; }
-
-async function loadData() {
-  if (gh && gh.token) {
-    const r = await fetch(`${ghUrl()}?ref=${encodeURIComponent(gh.branch)}&t=${Date.now()}`, { headers: ghHeaders(), cache: 'no-store' });
-    if (r.status === 404) { ghSha = null; data = { periods: [] }; return; }
-    if (!r.ok) throw new Error(`GitHub ${r.status}: ${(await r.json().catch(() => ({}))).message || ''}`);
-    const j = await r.json();
-    ghSha = j.sha;
-    data = await decryptData(JSON.parse(b64dec(j.content)));
-    return;
-  }
-  const local = () => { const s = localStorage.getItem(LOCAL_KEY); return s ? decryptData(JSON.parse(s)) : { periods: [] }; };
-  if (editing) { data = await local(); return; }
-  let remote = null;
-  try {
-    const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
-    if (r.ok) remote = await r.json();
-  } catch (e) { }
-  data = remote ? await decryptData(remote) : await local();
+async function api(action, extra = {}) {
+  const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ pin, action, ...extra }) });
+  return res.json();
 }
 
-let saveTimer, saving = Promise.resolve();
-async function save() {
-  localStorage.setItem(LOCAL_KEY, await encryptedText());
-  if (!(gh && gh.token)) { setStatus('บันทึกในเครื่องแล้ว - กด "ดาวน์โหลด data.json" แล้วอัปโหลดขึ้น GitHub เพื่อให้ทุกคนเห็น'); return; }
-  setStatus('กำลังบันทึกขึ้น GitHub…');
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { saving = saving.then(pushGitHub); }, 1200);
+/* local copy of the server rules so the calendar updates instantly; the server reply is the final truth */
+function applyOp(op) {
+  const ps = sorted();
+  if (op.t === 'start') { if (!periodAt(op.d)) data.periods.push({ s: op.d, e: null }); }
+  else if (op.t === 'end') {
+    const prev = [...ps].reverse().find(p => p.s <= op.d), nxt = prev && ps.find(p => p.s > prev.s);
+    if (prev && !(nxt && op.d >= nxt.s)) prev.e = op.d;
+  }
+  else if (op.t === 'erase') data.periods = data.periods.filter(p => p.s !== op.s);
+  else if (op.t === 'set') data.periods = normalize({ periods: op.periods }).periods;
 }
 
-async function pushGitHub() {
-  try {
-    const body = { message: `FT: update data.json (${todayIso()})`, content: b64enc(await encryptedText()), branch: gh.branch };
-    if (ghSha) body.sha = ghSha;
-    const r = await fetch(ghUrl(), { method: 'PUT', headers: { ...ghHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(`${r.status} ${j.message || ''}`);
-    ghSha = j.content.sha;
-    setStatus('✓ บันทึกขึ้น GitHub แล้ว (หน้าเว็บสาธารณะอัปเดตภายใน ~1 นาที)', 'ok');
-  } catch (e) {
-    setStatus('✕ บันทึกขึ้น GitHub ไม่สำเร็จ: ' + e.message + ' (ข้อมูลยังอยู่ในเครื่อง ลองโหลดหน้าใหม่)', 'err');
-  }
+function commit(op) {
+  if (!editing) return;
+  applyOp(op); render();
+  inFlight++;
+  setStatus('กำลังบันทึก…');
+  chain = chain.then(async () => {
+    try {
+      const r = await api(op.t, { d: op.d, s: op.s, periods: op.periods });
+      if (!r.ok) throw new Error(r.error === 'pin' ? 'รหัสผ่านถูกเปลี่ยน' : r.error);
+      inFlight--;
+      if (!inFlight) { data = normalize(r); lastSync = new Date(); render(); setStatus(`✓ บันทึกแล้ว ทุกคนเห็นข้อมูลนี้ (${hhmm(lastSync)})`, 'ok'); }
+    } catch (e) {
+      inFlight--;
+      setStatus('✕ บันทึกไม่สำเร็จ: ' + e.message + ' (โหลดข้อมูลล่าสุดให้แล้ว ลองใหม่อีกครั้ง)', 'err');
+      if (!inFlight) await refresh();
+    }
+  });
 }
 
 function setStatus(msg, cls = '') { const s = $('status'); s.textContent = msg; s.className = 'status ' + cls; }
@@ -414,52 +350,50 @@ function setEditing(on) {
   editing = on;
   document.body.classList.toggle('editing', on);
   document.querySelectorAll('.edit-only').forEach(el => el.classList.toggle('hidden', !on));
-  document.querySelectorAll('.view-only').forEach(el => el.classList.toggle('hidden', on));
   const b = $('badge');
-  b.textContent = on ? (gh && gh.token ? `โหมดแก้ไข · เชื่อม GitHub (${gh.repo})` : 'โหมดแก้ไข · ในเครื่องนี้') : 'โหมดดูอย่างเดียว';
+  b.textContent = on ? '♥ แก้ไขได้ · ทุกคนเห็นข้อมูลชุดเดียวกัน' : 'ล็อกอยู่';
   b.classList.toggle('edit', on);
 }
 
 async function refresh(msg) {
-  try { await loadData(); if (msg) toast(msg); }
-  catch (e) {
-    if (e instanceof WrongPass) return lockApp('รหัสผ่านถูกเปลี่ยน กรุณาใส่ใหม่');
-    toast('โหลดข้อมูลไม่สำเร็จ: ' + e.message);
-  }
-  render();
+  try {
+    const r = await api('load');
+    if (!r.ok) return r.error === 'pin' ? lockApp('รหัสผ่านถูกเปลี่ยน กรุณาใส่ใหม่') : toast('โหลดข้อมูลไม่สำเร็จ: ' + r.error);
+    if (inFlight) return;
+    data = normalize(r); lastSync = new Date();
+    if (!$('status').classList.contains('err')) setStatus(`✓ ข้อมูลล่าสุด (${hhmm(lastSync)})`, 'ok');
+    if (msg) toast(msg);
+    render();
+  } catch (e) { toast('เชื่อมต่อไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต'); }
 }
 
 function lockApp(err = '') {
-  pass = ''; sessionStorage.removeItem(PASS_KEY);
-  data = { periods: [] }; render();
+  pin = ''; sessionStorage.removeItem(PIN_KEY);
+  data = { periods: [] }; setEditing(false); render();
   $('pin').value = ''; $('pinErr').textContent = err;
   $('lock').classList.remove('hidden'); $('pin').focus();
 }
 
-async function unlock(pw) {
-  pass = pw;
-  $('pinBtn').disabled = true; $('pinBtn').textContent = 'กำลังตรวจสอบ…'; $('pinErr').textContent = '';
+async function unlock(code) {
+  if (API_URL.startsWith('PASTE')) return lockApp('ยังไม่ได้ตั้งค่า API_URL ในไฟล์ index.html');
+  pin = code;
+  $('pinBtn').disabled = true; $('pin').disabled = true; $('pinBtn').textContent = 'กำลังตรวจสอบ…'; $('pinErr').textContent = '';
   try {
-    await loadData();
-    sessionStorage.setItem(PASS_KEY, pw);
+    const r = await api('load');
+    if (!r.ok) throw new Error(r.error === 'pin' ? 'รหัสผ่านไม่ถูกต้อง ♡' : 'เกิดข้อผิดพลาด: ' + r.error);
+    sessionStorage.setItem(PIN_KEY, pin);
+    data = normalize(r); lastSync = new Date();
     $('lock').classList.add('hidden');
-    render();
-    if (editing) setStatus(`เชื่อม GitHub (${gh.repo}) อยู่ ติ๊กแล้วบันทึกอัตโนมัติ`, 'ok');
+    setEditing(true); render();
+    setStatus(`✓ ข้อมูลล่าสุด (${hhmm(lastSync)})`, 'ok');
   } catch (e) {
-    pass = ''; sessionStorage.removeItem(PASS_KEY);
-    $('pinErr').textContent = e instanceof WrongPass ? 'รหัสผ่านไม่ถูกต้อง ♡' : 'โหลดข้อมูลไม่สำเร็จ: ' + e.message;
+    pin = ''; sessionStorage.removeItem(PIN_KEY);
+    $('pinErr').textContent = e instanceof TypeError ? 'เชื่อมต่อไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต' : e.message;
     const box = $('lockForm'); box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
-    $('pin').select();
+    $('pin').value = '';
   }
-  $('pinBtn').disabled = false; $('pinBtn').textContent = 'เข้าสู่เว็บ ♥';
-}
-
-function guessRepo() {
-  const h = location.hostname;
-  if (!h.endsWith('.github.io')) return '';
-  const user = h.split('.')[0];
-  const seg = location.pathname.split('/').filter(Boolean)[0];
-  return `${user}/${seg && !seg.includes('.') ? seg : h}`;
+  $('pinBtn').disabled = false; $('pin').disabled = false; $('pinBtn').textContent = 'เข้าสู่เว็บ ♥';
+  if (!editing) $('pin').focus();
 }
 
 /* ---------- statistics ---------- */
@@ -626,7 +560,7 @@ function onDay(d) {
     if (inP) return toast('วันนี้อยู่ในรอบที่บันทึกไว้แล้ว');
     const open = ps.find(p => !p.e && p.s < d);
     if (open) return toast(`รอบที่มา ${fmt(open.s)} ยังไม่ได้ติ๊กวันหาย`);
-    data.periods.push({ s: d, e: null });
+    commit({ t: 'start', d });
     toast(`♥ บันทึกวันมา ${fmt(d)} แล้ว ต่อไปติ๊กวันหายนะ`);
     setMode('end');
   } else if (mode === 'end') {
@@ -636,16 +570,15 @@ function onDay(d) {
     if (nxt && d >= nxt.s) return toast('วันหายต้องอยู่ก่อนรอบถัดไป');
     const len = diff(prev.s, d) + 1;
     if (len > 15 && !confirm(`รอบนี้จะยาว ${len} วัน (มา ${fmt(prev.s)}) ยืนยันหรือไม่?`)) return;
-    prev.e = d;
+    commit({ t: 'end', d });
     toast(`♥ มา ${fmt(prev.s)} หาย ${fmt(d)} รวม ${len} วัน`);
     setMode('start');
   } else {
     if (!inP) return toast('วันนี้ไม่มีบันทึก');
     if (!confirm(`ลบรอบที่มา ${fmt(inP.s)} ใช่ไหม?`)) return;
-    data.periods = data.periods.filter(p => p !== inP);
+    commit({ t: 'erase', s: inP.s });
     toast('ลบรอบแล้ว');
   }
-  save(); render();
 }
 
 function setMode(m) {
@@ -697,64 +630,42 @@ $('btnToday').onclick = () => { view = { y: now.getFullYear(), m: now.getMonth()
 $('btnView').onclick = () => { yearMode = !yearMode; render(); };
 document.querySelectorAll('.mode').forEach(el => el.onclick = () => setMode(el.dataset.mode));
 document.addEventListener('keydown', e => {
-  if (['SELECT', 'INPUT'].includes(e.target.tagName) || $('dlg').open) return;
+  if (['SELECT', 'INPUT'].includes(e.target.tagName)) return;
   if (e.key === 'ArrowLeft') shift(-1);
   if (e.key === 'ArrowRight') shift(1);
 });
 $('btnReload').onclick = () => refresh('โหลดข้อมูลล่าสุดแล้ว');
 
-$('btnEdit').onclick = () => {
-  $('ghRepo').value = (gh && gh.repo) || guessRepo();
-  $('ghBranch').value = (gh && gh.branch) || 'main';
-  $('ghToken').value = '';
-  $('dlg').showModal();
-};
-$('dlgCancel').onclick = () => $('dlg').close();
-$('dlgLocal').onclick = async () => {
-  gh = null; localStorage.removeItem(GH_KEY);
-  localStorage.setItem(LOCAL_KEY, await encryptedText());
-  $('dlg').close(); setEditing(true);
-  setStatus('แก้ในเครื่องนี้ เสร็จแล้วกด "ดาวน์โหลด data.json" ไปแทนที่ไฟล์เดิมใน GitHub');
-};
-$('dlgOk').onclick = async () => {
-  const repo = $('ghRepo').value.trim(), branch = $('ghBranch').value.trim() || 'main', token = $('ghToken').value.trim();
-  if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !token) return toast('กรอก repository และ token ให้ครบ');
-  gh = { repo, branch, token };
-  try {
-    await loadData();
-    localStorage.setItem(GH_KEY, JSON.stringify(gh));
-    $('dlg').close(); setEditing(true); render();
-    setStatus('✓ เชื่อม GitHub แล้ว ติ๊กปฏิทินแล้วระบบจะบันทึกให้อัตโนมัติ', 'ok');
-  } catch (e) {
-    gh = null; toast('เชื่อมไม่สำเร็จ: ' + e.message);
-  }
-};
-$('btnExit').onclick = () => {
-  gh = null; localStorage.removeItem(GH_KEY);
-  setEditing(false); refresh('ออกจากโหมดแก้ไขแล้ว');
-};
-
-$('btnExport').onclick = async () => {
+$('btnExport').onclick = () => {
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([await encryptedText()], { type: 'application/json' }));
-  a.download = 'data.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({ periods: sorted() }, null, 2) + '\n'], { type: 'application/json' }));
+  a.download = `ft-backup-${todayIso()}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 };
 $('btnImport').onclick = () => $('file').click();
 $('file').onchange = async e => {
   const f = e.target.files[0]; if (!f) return;
+  e.target.value = '';
   try {
     const d = JSON.parse(await f.text());
-    if (isEnc(d)) data = await decryptData(d);
-    else if (Array.isArray(d.periods)) data = normalize(d);
-    else throw 0;
-    save(); render(); toast('♥ นำเข้าข้อมูลเรียบร้อย');
-  } catch (err) { toast(err instanceof WrongPass ? 'ไฟล์นี้ใช้รหัสผ่านอื่น' : 'ไฟล์ไม่ถูกต้อง'); }
-  e.target.value = '';
+    if (!d || !Array.isArray(d.periods)) throw 0;
+    if (!confirm('ข้อมูลจากไฟล์จะแทนที่ข้อมูลปัจจุบันของทุกคน ยืนยันไหม?')) return;
+    commit({ t: 'set', periods: normalize(d).periods }); toast('♥ นำเข้าข้อมูลเรียบร้อย');
+  } catch (err) { toast('ไฟล์ไม่ถูกต้อง'); }
 };
 $('btnClear').onclick = () => {
   if (!confirm('ล้างข้อมูลทั้งหมดใช่ไหม? (ทุกคนจะไม่เห็นข้อมูลด้วย)')) return;
-  data = { periods: [] }; save(); render(); toast('ล้างข้อมูลแล้ว');
+  commit({ t: 'set', periods: [] }); toast('ล้างข้อมูลแล้ว');
 };
+
+// pick up other people's changes: every 30 s while the tab is visible, and when coming back to the tab
+async function autoSync() {
+  if (!pin || !editing || document.hidden || inFlight) return;
+  const before = JSON.stringify(sorted());
+  await refresh();
+  if (JSON.stringify(sorted()) !== before) toast('♥ มีการอัปเดตข้อมูลใหม่');
+}
+setInterval(autoSync, POLL_MS);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) autoSync(); });
 
 (function hearts() {
   const box = $('hearts'), sym = ['♥', '♡', '❤'];
@@ -770,11 +681,16 @@ $('btnClear').onclick = () => {
 })();
 
 $('lockForm').onsubmit = e => { e.preventDefault(); const pw = $('pin').value.trim(); if (pw) unlock(pw); else $('pin').focus(); };
+$('pin').addEventListener('input', () => {
+  $('pin').value = $('pin').value.replace(/\D/g, '').slice(0, 4);
+  $('pinErr').textContent = '';
+  if ($('pin').value.length === 4) unlock($('pin').value);
+});
 $('btnLock').onclick = () => lockApp();
 
-setEditing(!!(gh && gh.token));
+setEditing(false);
 render();
-if (pass) unlock(pass); else $('pin').focus();
+if (pin) unlock(pin); else $('pin').focus();
 </script>
 </body>
 </html>
