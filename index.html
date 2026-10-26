@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ff8fb1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FT">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>FT ♥</title>
+<style>
+:root{
+  --rose:#e84a7f; --rose-d:#c2185b; --pink:#ff8fb1; --blush:#ffe3ec; --lav:#d9c8ff; --lav-d:#8e6bd8;
+  --text:#5a2a3c; --muted:#a07186; --card:rgba(255,255,255,.8); --shadow:0 10px 30px rgba(232,74,127,.18);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Leelawadee UI","Segoe UI",Tahoma,sans-serif;color:var(--text);min-height:100vh;
+  background:linear-gradient(135deg,#ffd1dc 0%,#ffeef3 45%,#f3e1ff 100%);background-attachment:fixed;overflow-x:hidden}
+.hearts{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.hearts span{position:absolute;bottom:-50px;color:rgba(232,74,127,.22);animation:rise linear infinite}
+@keyframes rise{to{transform:translateY(-115vh) rotate(30deg);opacity:0}}
+.wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:26px 18px 40px}
+header{text-align:center;margin-bottom:20px}
+header h1{margin:0;font-size:2.6rem;color:var(--rose-d);text-shadow:0 2px 0 #fff;letter-spacing:2px}
+header h1 .beat{display:inline-block;color:var(--rose);animation:beat 1.3s infinite}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.25)}30%{transform:scale(1)}45%{transform:scale(1.15)}}
+header p{margin:6px 0 0;color:var(--muted)}
+.badge{display:inline-block;margin-top:8px;padding:4px 12px;border-radius:999px;background:#fff;font-size:.8rem;color:var(--muted);box-shadow:0 3px 10px rgba(232,74,127,.12)}
+.badge.edit{background:var(--rose);color:#fff}
+.grid{display:grid;grid-template-columns:1fr 350px;gap:18px;align-items:start}
+@media(max-width:920px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);backdrop-filter:blur(8px);border-radius:24px;box-shadow:var(--shadow);padding:18px;border:1px solid rgba(255,255,255,.9)}
+.side .card+.card{margin-top:16px}
+.card h3{margin:0 0 12px;color:var(--rose-d);font-size:1.1rem}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between;margin-bottom:14px}
+.nav,.selects{display:flex;align-items:center;gap:6px}
+button,select,input{font-family:inherit;font-size:.95rem}
+.btn{border:0;border-radius:999px;padding:8px 15px;cursor:pointer;background:#fff;color:var(--rose-d);box-shadow:0 3px 10px rgba(232,74,127,.15);transition:.15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(232,74,127,.28)}
+.btn.round{width:38px;height:38px;padding:0;font-size:1.15rem}
+.btn.primary{background:linear-gradient(135deg,var(--pink),var(--rose));color:#fff}
+.btn.ghost{background:transparent;box-shadow:none;border:1px dashed #f3a6c0}
+select,input[type=text],input[type=password]{border:1px solid #ffc2d4;border-radius:12px;padding:7px 10px;background:#fff;color:var(--text)}
+.title{font-size:1.4rem;font-weight:700;color:var(--rose-d);min-width:220px;text-align:center}
+.modes{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.mode{flex:1;min-width:130px;border:2px solid transparent;border-radius:18px;padding:10px;cursor:pointer;background:#fff;color:var(--text);transition:.15s}
+.mode b{display:block;font-size:1.05rem}
+.mode small{color:var(--muted)}
+.mode.active{border-color:var(--rose);background:var(--blush);box-shadow:0 4px 14px rgba(232,74,127,.25)}
+.mode.erase.active{border-color:#999;background:#f4f0f2}
+.dow,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:7px}
+.dow div{text-align:center;font-weight:700;color:var(--rose);padding:6px 0}
+.dow div:first-child,.dow div:last-child{color:var(--lav-d)}
+.day{position:relative;aspect-ratio:1/.88;border-radius:16px;background:#fff;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;transition:.15s;border:2px solid transparent;user-select:none}
+body.editing .day:not(.empty){cursor:pointer}
+body.editing .day:not(.empty):hover{transform:scale(1.06);box-shadow:0 6px 16px rgba(232,74,127,.28);z-index:2}
+.day .n{font-size:1.15rem;font-weight:600}
+.day .tag{font-size:.68rem;margin-top:3px;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.9);color:var(--rose-d);font-weight:700;white-space:nowrap}
+.day.empty{background:transparent;border:0}
+.day.today{border-color:var(--lav-d);box-shadow:0 0 0 3px rgba(142,107,216,.18)}
+.day.period{background:linear-gradient(135deg,#ff7aa2,#e84a7f);color:#fff}
+.day.period.ongoing{background:linear-gradient(135deg,#ffb0c8,#ff7aa2)}
+.day.period::after{content:"♥";position:absolute;top:4px;right:8px;font-size:.8rem;opacity:.9}
+.day.predict{background:repeating-linear-gradient(45deg,#fff,#fff 6px,#ffe3ec 6px,#ffe3ec 12px);border:2px dashed var(--pink)}
+.day.fertile{background:#f3ecff}
+.day.ovul{background:#e3d4ff}
+.day.ovul .tag{color:var(--lav-d)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;font-size:.85rem;color:var(--muted)}
+.legend i{display:inline-block;width:16px;height:16px;border-radius:5px;vertical-align:-3px;margin-right:5px}
+.big{display:flex;align-items:center;gap:14px;padding:14px;border-radius:18px;background:linear-gradient(135deg,#ff9bb9,#e84a7f);color:#fff;margin-bottom:12px}
+.big .num{font-size:2.6rem;font-weight:800;line-height:1}
+.big .lbl{font-size:.9rem;opacity:.95}
+.list{list-style:none;margin:0;padding:0}
+.list li{background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:8px;border-left:5px solid var(--rose);font-size:.92rem}
+.list li .d{font-weight:700;color:var(--rose-d)}
+.list li.open{border-left-color:var(--pink)}
+.muted{color:var(--muted);font-size:.9rem}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:#fff;border-radius:16px;padding:10px 12px;text-align:center}
+.stat .v{font-size:1.5rem;font-weight:800;color:var(--rose-d)}
+.stat .k{font-size:.78rem;color:var(--muted)}
+.stat.wide{grid-column:1/-1;background:linear-gradient(135deg,#f3ecff,#ffe3ec)}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.year{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.mini{background:#fff;border-radius:18px;padding:10px;cursor:pointer;transition:.15s}
+.mini:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.mini h4{margin:0 0 6px;text-align:center;color:var(--rose-d)}
+.mini h4 small{color:var(--muted);font-weight:400}
+.mini .g{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.mini .c{font-size:.7rem;text-align:center;padding:3px 0;border-radius:6px}
+.mini .c.h{color:var(--rose);font-weight:700}
+.mini .c.period{background:var(--rose);color:#fff}
+.mini .c.predict{background:var(--blush);outline:1px dashed var(--pink)}
+.mini .c.fertile,.mini .c.ovul{background:#efe6ff}
+.mini .c.today{outline:2px solid var(--lav-d)}
+.hidden{display:none!important}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(120px);background:#fff;color:var(--rose-d);
+  padding:12px 22px;border-radius:999px;box-shadow:0 10px 30px rgba(232,74,127,.35);transition:.3s;z-index:9;font-weight:600;max-width:92vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.note{font-size:.78rem;color:var(--muted);margin-top:10px;line-height:1.5}
+.status{font-size:.85rem;margin-top:10px;color:var(--muted)}
+.status.ok{color:#2e9d6a}.status.err{color:#d32f2f}
+dialog{border:0;border-radius:24px;padding:22px;max-width:440px;width:92vw;box-shadow:0 20px 60px rgba(194,24,91,.35);color:var(--text)}
+dialog::backdrop{background:rgba(90,42,60,.35);backdrop-filter:blur(2px)}
+dialog h3{margin:0 0 10px;color:var(--rose-d)}
+dialog label{display:block;font-size:.85rem;margin:10px 0 4px;color:var(--muted)}
+dialog input{width:100%}
+footer{text-align:center;color:var(--muted);margin-top:24px;font-size:.85rem}
+.lock{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:18px;
+  background:linear-gradient(135deg,rgba(255,209,220,.96),rgba(243,225,255,.96));backdrop-filter:blur(6px)}
+.lock .box{background:#fff;border-radius:28px;box-shadow:0 20px 60px rgba(194,24,91,.3);padding:30px 26px;text-align:center;width:340px;max-width:100%}
+.lock .heart{font-size:3.2rem;color:var(--rose);animation:beat 1.3s infinite;display:inline-block}
+.lock h2{margin:6px 0 4px;color:var(--rose-d);letter-spacing:2px}
+.lock input{width:100%;text-align:center;font-size:1.6rem;letter-spacing:12px;margin:16px 0 10px;padding:10px;border-radius:16px}
+.lock .btn{width:100%;padding:11px}
+.lock .err{color:#d32f2f;font-size:.9rem;min-height:1.3em;margin-top:8px}
+.tag .short,.hint{display:none}
+.days.anim{animation:fadeSlide .25s ease}
+@keyframes fadeSlide{from{opacity:.3;transform:translateX(var(--dx,0))}to{opacity:1;transform:none}}
+@media (hover:none){
+  .btn:hover,.mini:hover{transform:none;box-shadow:0 3px 10px rgba(232,74,127,.15)}
+  body.editing .day:not(.empty):hover{transform:none;box-shadow:none}
+  body.editing .day:not(.empty):active{transform:scale(.92)}
+  .hint{display:block;text-align:center;font-size:.75rem;color:var(--muted);margin-top:10px}
+}
+@media (max-width:600px){
+  .wrap{padding:max(14px,env(safe-area-inset-top)) 10px calc(28px + env(safe-area-inset-bottom))}
+  header{margin-bottom:12px}
+  header h1{font-size:1.9rem}
+  header p{font-size:.85rem}
+  .card{padding:12px;border-radius:20px}
+  .side .card+.card{margin-top:12px}
+  .grid{gap:12px}
+  .toolbar{gap:8px;margin-bottom:10px}
+  .nav{width:100%;justify-content:space-between}
+  .title{min-width:0;flex:1;font-size:1.15rem}
+  .selects{width:100%}
+  .selects select{flex:1;min-width:0}
+  .selects .btn{padding:8px 10px;font-size:.85rem;white-space:nowrap}
+  select,input[type=text],input[type=password]{font-size:16px}
+  .modes{gap:6px;margin-bottom:10px}
+  .mode{min-width:0;padding:9px 4px;text-align:center;border-radius:14px}
+  .mode b{font-size:.9rem}
+  .mode small{display:none}
+  .dow,.days{gap:4px}
+  .dow div{font-size:.8rem;padding:4px 0}
+  .day{aspect-ratio:1/1.08;border-radius:11px}
+  .day .n{font-size:.95rem}
+  .day .tag{font-size:.58rem;padding:0 5px;margin-top:1px}
+  .tag .full{display:none}
+  .tag .short{display:inline}
+  .day.period::after{top:1px;right:4px;font-size:.6rem}
+  .legend{gap:6px 12px;font-size:.75rem;margin-top:12px}
+  .big{padding:12px}
+  .big .num{font-size:2.1rem}
+  .stat .v{font-size:1.25rem}
+  .year{grid-template-columns:1fr 1fr;gap:8px}
+  .mini{padding:6px;border-radius:14px}
+  .mini h4{font-size:.85rem;margin-bottom:4px}
+  .mini h4 small{display:block;font-size:.7rem}
+  .mini .g{gap:2px}
+  .mini .c{font-size:.55rem;padding:2px 0;border-radius:4px}
+  .row .btn{flex:1 1 auto}
+  .toast{bottom:calc(16px + env(safe-area-inset-bottom));font-size:.9rem}
+  .lock .box{padding:26px 20px}
+}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-4px)}}
+</style>
+</head>
+<body>
+<div class="hearts" id="hearts"></div>
+<div class="lock" id="lock">
+  <form class="box" id="lockForm">
+    <span class="heart">♥</span>
+    <h2>FT</h2>
+    <div class="muted">ใส่รหัสผ่านเพื่อเข้าดูข้อมูล</div>
+    <input type="password" id="pin" inputmode="numeric" autocomplete="current-password" placeholder="••••" autofocus>
+    <button class="btn primary" type="submit" id="pinBtn">เข้าสู่เว็บ ♥</button>
+    <div class="err" id="pinErr"></div>
+  </form>
+</div>
+<div class="wrap">
+  <header>
+    <h1><span class="beat">♥</span> FT <span class="beat">♥</span></h1>
+    <p>บันทึกรอบเดือนด้วยความรัก ดูแลตัวเองทุกวันนะ</p>
+    <span class="badge" id="badge">โหมดดูอย่างเดียว</span>
+  </header>
+
+  <div class="grid">
+    <main class="card">
+      <div class="toolbar">
+        <div class="nav">
+          <button class="btn round" id="prev" title="ก่อนหน้า">‹</button>
+          <div class="title" id="title"></div>
+          <button class="btn round" id="next" title="ถัดไป">›</button>
+        </div>
+        <div class="selects">
+          <select id="selMonth"></select>
+          <select id="selYear"></select>
+          <button class="btn" id="btnToday">วันนี้</button>
+          <button class="btn primary" id="btnView">ดูทั้งปี</button>
+        </div>
+      </div>
+
+      <div id="monthView">
+        <div class="modes edit-only hidden">
+          <div class="mode active" data-mode="start"><b>♥ วันที่มา</b><small>ติ๊กวันแรกที่ประจำเดือนมา</small></div>
+          <div class="mode" data-mode="end"><b>♡ วันที่หาย</b><small>ติ๊กวันสุดท้ายที่ยังมีอยู่</small></div>
+          <div class="mode erase" data-mode="erase"><b>✕ ลบรอบ</b><small>ติ๊กวันในรอบที่ต้องการลบ</small></div>
+        </div>
+        <div class="dow"><div>อา</div><div>จ</div><div>อ</div><div>พ</div><div>พฤ</div><div>ศ</div><div>ส</div></div>
+        <div class="days" id="days"></div>
+        <div class="legend">
+          <span><i style="background:linear-gradient(135deg,#ff7aa2,#e84a7f)"></i>วันมีประจำเดือน</span>
+          <span><i style="background:linear-gradient(135deg,#ffb0c8,#ff7aa2)"></i>ยังไม่หาย (ถึงวันนี้)</span>
+          <span><i style="background:#ffe3ec;border:1px dashed #ff8fb1"></i>คาดว่าจะมา</span>
+          <span><i style="background:#e3d4ff"></i>ช่วงไข่ตก (โดยประมาณ)</span>
+          <span><i style="background:#fff;border:2px solid #8e6bd8"></i>วันนี้</span>
+        </div>
+        <div class="hint">ปัดซ้าย / ขวา เพื่อเปลี่ยนเดือน</div>
+      </div>
+
+      <div id="yearView" class="year hidden"></div>
+    </main>
+
+    <aside class="side">
+      <div class="card">
+        <h3 id="sumTitle">สรุปเดือนนี้</h3>
+        <div class="big"><div class="num" id="sumDays">0</div><div class="lbl" id="sumLbl">วันที่มีประจำเดือน<br>ในเดือนนี้</div></div>
+        <ul class="list" id="sumList"></ul>
+      </div>
+
+      <div class="card">
+        <h3>ภาพรวมรอบเดือน</h3>
+        <div class="stats" id="stats"></div>
+        <div class="note">* ค่าคาดการณ์คำนวณจากค่าเฉลี่ยรอบที่บันทึกไว้ (สูงสุด 6 รอบล่าสุด) ใช้เป็นแนวทางเท่านั้น ไม่ใช่คำแนะนำทางการแพทย์</div>
+      </div>
+
+      <div class="card">
+        <h3 id="yearTitle">สรุปทั้งปี</h3>
+        <div class="stats" id="yearStats"></div>
+      </div>
+
+      <div class="card">
+        <h3>ข้อมูล</h3>
+        <div class="view-only">
+          <div class="muted">ทุกคนที่มีลิงก์เห็นข้อมูลชุดเดียวกัน (อ่านอย่างเดียว)</div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn" id="btnReload">↻ โหลดข้อมูลล่าสุด</button>
+            <button class="btn ghost" id="btnEdit">✎ เจ้าของเว็บ: แก้ไข</button>
+            <button class="btn ghost" id="btnLock">🔒 ล็อก</button>
+          </div>
+        </div>
+        <div class="edit-only hidden">
+          <div class="row">
+            <button class="btn" id="btnExport">⬇ ดาวน์โหลด data.json</button>
+            <button class="btn" id="btnImport">⬆ นำเข้า</button>
+            <button class="btn ghost" id="btnClear">ล้างทั้งหมด</button>
+            <button class="btn ghost" id="btnExit">ออกจากโหมดแก้ไข</button>
+            <input type="file" id="file" accept=".json" class="hidden">
+          </div>
+          <div class="status" id="status"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <footer>FT · Made with ♥</footer>
+</div>
+
+<dialog id="dlg">
+  <h3>✎ โหมดแก้ไข (เจ้าของเว็บ)</h3>
+  <div class="muted">ใส่ GitHub token เพื่อให้กดติ๊กแล้วบันทึกขึ้น GitHub ทันที ทุกคนจะเห็นข้อมูลใหม่ภายในประมาณ 1 นาที
+    token จะถูกเก็บไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น</div>
+  <label>Repository (ชื่อผู้ใช้/ชื่อ repo)</label>
+  <input type="text" id="ghRepo" placeholder="username/repo">
+  <label>Branch</label>
+  <input type="text" id="ghBranch" value="main">
+  <label>GitHub token (Fine-grained, สิทธิ์ Contents: Read and write เฉพาะ repo นี้)</label>
+  <input type="password" id="ghToken" placeholder="github_pat_...">
+  <div class="row" style="margin-top:16px;justify-content:flex-end">
+    <button class="btn ghost" id="dlgCancel">ยกเลิก</button>
+    <button class="btn" id="dlgLocal" title="แก้ในเครื่อง แล้วดาวน์โหลด data.json ไปอัปโหลดเอง">แก้ในเครื่อง</button>
+    <button class="btn primary" id="dlgOk">เชื่อม GitHub</button>
+  </div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+const LOCAL_KEY = 'ft.data';
+const GH_KEY = 'ft.github';
+const MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const DOW = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const $ = id => document.getElementById(id);
+
+const pad = n => String(n).padStart(2, '0');
+const iso = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+const parse = s => { const [a, b, c] = s.split('-').map(Number); return Date.UTC(a, b - 1, c); };
+const diff = (a, b) => Math.round((parse(b) - parse(a)) / 864e5);
+const addDays = (s, n) => { const d = new Date(parse(s) + n * 864e5); return iso(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); };
+const todayIso = () => { const d = new Date(); return iso(d.getFullYear(), d.getMonth(), d.getDate()); };
+const fmt = s => { const [a, b, c] = s.split('-').map(Number); return `${c} ${SHORT[b - 1]} ${a + 543}`; };
+const avg = a => a.reduce((x, y) => x + y, 0) / a.length;
+const daysIn = (y, m) => new Date(y, m + 1, 0).getDate();
+const b64enc = s => btoa(unescape(encodeURIComponent(s)));
+const b64dec = s => decodeURIComponent(escape(atob(s.replace(/\s/g, ''))));
+
+/* ---------- encryption (AES-GCM, key = PBKDF2-SHA256 of the password) ---------- */
+const PASS_KEY = 'ft.pass';
+const ITER = 250000;
+const te = new TextEncoder(), td = new TextDecoder();
+let pass = sessionStorage.getItem(PASS_KEY) || '';
+const toB64 = u8 => { let s = ''; for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); };
+const fromB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const isEnc = j => j && typeof j.ct === 'string' && typeof j.iv === 'string' && typeof j.salt === 'string';
+class WrongPass extends Error {}
+
+async function deriveKey(pw, salt, iter) {
+  const base = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iter, hash: 'SHA-256' }, base,
+    { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function encryptData(obj) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(pass, salt, ITER);
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, te.encode(JSON.stringify(obj))));
+  return { v: 1, kdf: 'PBKDF2-SHA256', iter: ITER, salt: toB64(salt), iv: toB64(iv), ct: toB64(ct) };
+}
+async function decryptData(j) {
+  if (!isEnc(j)) throw new Error('data.json ไม่ได้เข้ารหัส');
+  try {
+    const key = await deriveKey(pass, fromB64(j.salt), j.iter || ITER);
+    const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(j.iv) }, key, fromB64(j.ct));
+    return normalize(JSON.parse(td.decode(pt)));
+  } catch (e) { throw new WrongPass('รหัสผ่านไม่ถูกต้อง'); }
+}
+async function encryptedText() { return JSON.stringify(await encryptData(data), null, 2) + '\n'; }
+
+let data = { periods: [] };
+const now = new Date();
+let view = { y: now.getFullYear(), m: now.getMonth() };
+let mode = 'start';
+let yearMode = false;
+let editing = false;
+let gh = readGh();
+let ghSha = null;
+
+function normalize(d) {
+  if (!d || !Array.isArray(d.periods)) return { periods: [] };
+  return { periods: d.periods.filter(p => p && /^\d{4}-\d{2}-\d{2}$/.test(p.s)).map(p => ({ s: p.s, e: /^\d{4}-\d{2}-\d{2}$/.test(p.e) ? p.e : null })) };
+}
+function readGh() { try { return JSON.parse(localStorage.getItem(GH_KEY)); } catch (e) { return null; } }
+function sorted() { return data.periods.sort((a, b) => a.s < b.s ? -1 : 1); }
+function endOf(p) { if (p.e) return p.e; const t = todayIso(); return t > p.s ? t : p.s; }
+function periodAt(d) { return data.periods.find(p => d >= p.s && d <= endOf(p)); }
+function lenOf(p) { return diff(p.s, endOf(p)) + 1; }
+
+/* ---------- data loading / saving ---------- */
+function ghHeaders() { return { Authorization: 'Bearer ' + gh.token, Accept: 'application/vnd.github+json' }; }
+function ghUrl() { return `https://api.github.com/repos/${gh.repo}/contents/data.json`; }
+
+async function loadData() {
+  if (gh && gh.token) {
+    const r = await fetch(`${ghUrl()}?ref=${encodeURIComponent(gh.branch)}&t=${Date.now()}`, { headers: ghHeaders(), cache: 'no-store' });
+    if (r.status === 404) { ghSha = null; data = { periods: [] }; return; }
+    if (!r.ok) throw new Error(`GitHub ${r.status}: ${(await r.json().catch(() => ({}))).message || ''}`);
+    const j = await r.json();
+    ghSha = j.sha;
+    data = await decryptData(JSON.parse(b64dec(j.content)));
+    return;
+  }
+  const local = () => { const s = localStorage.getItem(LOCAL_KEY); return s ? decryptData(JSON.parse(s)) : { periods: [] }; };
+  if (editing) { data = await local(); return; }
+  let remote = null;
+  try {
+    const r = await fetch('data.json?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) remote = await r.json();
+  } catch (e) { }
+  data = remote ? await decryptData(remote) : await local();
+}
+
+let saveTimer, saving = Promise.resolve();
+async function save() {
+  localStorage.setItem(LOCAL_KEY, await encryptedText());
+  if (!(gh && gh.token)) { setStatus('บันทึกในเครื่องแล้ว - กด "ดาวน์โหลด data.json" แล้วอัปโหลดขึ้น GitHub เพื่อให้ทุกคนเห็น'); return; }
+  setStatus('กำลังบันทึกขึ้น GitHub…');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { saving = saving.then(pushGitHub); }, 1200);
+}
+
+async function pushGitHub() {
+  try {
+    const body = { message: `FT: update data.json (${todayIso()})`, content: b64enc(await encryptedText()), branch: gh.branch };
+    if (ghSha) body.sha = ghSha;
+    const r = await fetch(ghUrl(), { method: 'PUT', headers: { ...ghHeaders(), 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(`${r.status} ${j.message || ''}`);
+    ghSha = j.content.sha;
+    setStatus('✓ บันทึกขึ้น GitHub แล้ว (หน้าเว็บสาธารณะอัปเดตภายใน ~1 นาที)', 'ok');
+  } catch (e) {
+    setStatus('✕ บันทึกขึ้น GitHub ไม่สำเร็จ: ' + e.message + ' (ข้อมูลยังอยู่ในเครื่อง ลองโหลดหน้าใหม่)', 'err');
+  }
+}
+
+function setStatus(msg, cls = '') { const s = $('status'); s.textContent = msg; s.className = 'status ' + cls; }
+
+function setEditing(on) {
+  editing = on;
+  document.body.classList.toggle('editing', on);
+  document.querySelectorAll('.edit-only').forEach(el => el.classList.toggle('hidden', !on));
+  document.querySelectorAll('.view-only').forEach(el => el.classList.toggle('hidden', on));
+  const b = $('badge');
+  b.textContent = on ? (gh && gh.token ? `โหมดแก้ไข · เชื่อม GitHub (${gh.repo})` : 'โหมดแก้ไข · ในเครื่องนี้') : 'โหมดดูอย่างเดียว';
+  b.classList.toggle('edit', on);
+}
+
+async function refresh(msg) {
+  try { await loadData(); if (msg) toast(msg); }
+  catch (e) {
+    if (e instanceof WrongPass) return lockApp('รหัสผ่านถูกเปลี่ยน กรุณาใส่ใหม่');
+    toast('โหลดข้อมูลไม่สำเร็จ: ' + e.message);
+  }
+  render();
+}
+
+function lockApp(err = '') {
+  pass = ''; sessionStorage.removeItem(PASS_KEY);
+  data = { periods: [] }; render();
+  $('pin').value = ''; $('pinErr').textContent = err;
+  $('lock').classList.remove('hidden'); $('pin').focus();
+}
+
+async function unlock(pw) {
+  pass = pw;
+  $('pinBtn').disabled = true; $('pinBtn').textContent = 'กำลังตรวจสอบ…'; $('pinErr').textContent = '';
+  try {
+    await loadData();
+    sessionStorage.setItem(PASS_KEY, pw);
+    $('lock').classList.add('hidden');
+    render();
+    if (editing) setStatus(`เชื่อม GitHub (${gh.repo}) อยู่ ติ๊กแล้วบันทึกอัตโนมัติ`, 'ok');
+  } catch (e) {
+    pass = ''; sessionStorage.removeItem(PASS_KEY);
+    $('pinErr').textContent = e instanceof WrongPass ? 'รหัสผ่านไม่ถูกต้อง ♡' : 'โหลดข้อมูลไม่สำเร็จ: ' + e.message;
+    const box = $('lockForm'); box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+    $('pin').select();
+  }
+  $('pinBtn').disabled = false; $('pinBtn').textContent = 'เข้าสู่เว็บ ♥';
+}
+
+function guessRepo() {
+  const h = location.hostname;
+  if (!h.endsWith('.github.io')) return '';
+  const user = h.split('.')[0];
+  const seg = location.pathname.split('/').filter(Boolean)[0];
+  return `${user}/${seg && !seg.includes('.') ? seg : h}`;
+}
+
+/* ---------- statistics ---------- */
+function computeStats() {
+  const ps = sorted();
+  const cycles = [];
+  for (let i = 1; i < ps.length; i++) cycles.push(diff(ps[i - 1].s, ps[i].s));
+  const recent = cycles.slice(-6).filter(c => c >= 15 && c <= 60);
+  const lens = ps.filter(p => p.e).map(lenOf).slice(-6);
+  return {
+    ps,
+    avgC: recent.length ? Math.round(avg(recent)) : 28,
+    avgL: lens.length ? Math.round(avg(lens)) : 5,
+    hasC: recent.length > 0, hasL: lens.length > 0,
+    last: ps[ps.length - 1]
+  };
+}
+
+function predictions(st) {
+  const map = {};
+  if (!st.last) return map;
+  const t = todayIso();
+  for (let k = 1; k <= 13; k++) {
+    const ns = addDays(st.last.s, st.avgC * k);
+    const ov = addDays(ns, -14);
+    for (let i = -5; i <= 1; i++) { const d = addDays(ov, i); if (d > st.last.s) map[d] = i === 0 ? 'ovul' : 'fertile'; }
+    for (let i = 0; i < st.avgL; i++) { const d = addDays(ns, i); if (d >= t) map[d] = i === 0 ? 'predictStart' : 'predict'; }
+  }
+  return map;
+}
+
+function dayInfo(d, pred) {
+  const p = periodAt(d);
+  if (p) {
+    const cls = ['period']; let tag = '', short = '';
+    if (!p.e) cls.push('ongoing');
+    if (d === p.s && p.e === p.s) [tag, short] = ['มา-หาย', 'มา'];
+    else if (d === p.s) [tag, short] = ['มา', 'มา'];
+    else if (d === p.e) [tag, short] = ['หาย', 'หาย'];
+    else if (!p.e && d === endOf(p)) [tag, short] = [`วันที่ ${lenOf(p)}`, `ว.${lenOf(p)}`];
+    return { cls, tag, short };
+  }
+  const v = pred[d];
+  if (v === 'predictStart') return { cls: ['predict'], tag: 'คาดว่ามา', short: 'คาด' };
+  if (v === 'predict') return { cls: ['predict'], tag: '' };
+  if (v === 'ovul') return { cls: ['ovul'], tag: 'ไข่ตก', short: 'ไข่' };
+  if (v === 'fertile') return { cls: ['fertile'], tag: '' };
+  return { cls: [], tag: '' };
+}
+
+/* ---------- rendering ---------- */
+function render() {
+  $('title').textContent = yearMode ? `ปี ${view.y + 543} (${view.y})` : `${MONTHS[view.m]} ${view.y + 543}`;
+  $('selMonth').value = view.m;
+  fillYears();
+  $('selMonth').classList.toggle('hidden', yearMode);
+  $('btnView').textContent = yearMode ? 'ดูรายเดือน' : 'ดูทั้งปี';
+  $('monthView').classList.toggle('hidden', yearMode);
+  $('yearView').classList.toggle('hidden', !yearMode);
+  const st = computeStats();
+  const pred = predictions(st);
+  yearMode ? renderYear(pred) : renderMonth(pred);
+  renderSummary(st);
+  renderStats(st);
+  renderYearStats(st);
+}
+
+function renderMonth(pred) {
+  const box = $('days'); box.innerHTML = '';
+  const first = new Date(view.y, view.m, 1).getDay();
+  const t = todayIso();
+  for (let i = 0; i < first; i++) box.insertAdjacentHTML('beforeend', '<div class="day empty"></div>');
+  for (let d = 1; d <= daysIn(view.y, view.m); d++) {
+    const ds = iso(view.y, view.m, d);
+    const info = dayInfo(ds, pred);
+    const el = document.createElement('div');
+    el.className = ['day', ...info.cls, ds === t ? 'today' : ''].join(' ');
+    el.innerHTML = `<span class="n">${d}</span>${info.tag ? `<span class="tag"><span class="full">${info.tag}</span><span class="short">${info.short}</span></span>` : ''}`;
+    el.title = fmt(ds);
+    el.onclick = () => { if (editing) onDay(ds); };
+    box.appendChild(el);
+  }
+}
+
+function renderYear(pred) {
+  const box = $('yearView'); box.innerHTML = '';
+  const t = todayIso();
+  for (let m = 0; m < 12; m++) {
+    const first = new Date(view.y, m, 1).getDay();
+    let cells = DOW.map(x => `<div class="c h">${x}</div>`).join('');
+    for (let i = 0; i < first; i++) cells += '<div class="c"></div>';
+    let count = 0;
+    for (let d = 1; d <= daysIn(view.y, m); d++) {
+      const ds = iso(view.y, m, d);
+      const info = dayInfo(ds, pred);
+      if (info.cls.includes('period')) count++;
+      cells += `<div class="c ${info.cls.join(' ')} ${ds === t ? 'today' : ''}">${d}</div>`;
+    }
+    const el = document.createElement('div');
+    el.className = 'mini';
+    el.innerHTML = `<h4>${MONTHS[m]} <small>${count ? '♥ ' + count + ' วัน' : ''}</small></h4><div class="g">${cells}</div>`;
+    el.onclick = () => { view.m = m; yearMode = false; render(); };
+    box.appendChild(el);
+  }
+}
+
+function renderSummary(st) {
+  $('sumTitle').textContent = yearMode ? `สรุปปี ${view.y + 543}` : `สรุป ${MONTHS[view.m]} ${view.y + 543}`;
+  const from = yearMode ? `${view.y}-01-01` : iso(view.y, view.m, 1);
+  const to = yearMode ? `${view.y}-12-31` : iso(view.y, view.m, daysIn(view.y, view.m));
+  const list = st.ps.filter(p => p.s <= to && endOf(p) >= from);
+  let total = 0;
+  list.forEach(p => {
+    const a = p.s > from ? p.s : from, b = endOf(p) < to ? endOf(p) : to;
+    total += diff(a, b) + 1;
+  });
+  $('sumDays').textContent = total;
+  $('sumLbl').innerHTML = `วันที่มีประจำเดือน<br>${yearMode ? 'ในปีนี้' : 'ในเดือนนี้'}`;
+  $('sumList').innerHTML = list.length ? list.map(p => p.e
+    ? `<li><span class="d">มา ${fmt(p.s)}</span> → <span class="d">หาย ${fmt(p.e)}</span><br>รวม <b>${lenOf(p)}</b> วันจึงหาย</li>`
+    : `<li class="open"><span class="d">มา ${fmt(p.s)}</span> → ยังไม่หาย<br>ตอนนี้เป็นวันที่ <b>${lenOf(p)}</b></li>`
+  ).join('') : `<li class="open muted">ยังไม่มีบันทึกใน${yearMode ? 'ปี' : 'เดือน'}นี้ ♡</li>`;
+}
+
+function renderStats(st) {
+  const t = todayIso();
+  let next = '-', until = '-', cycleDay = '-';
+  if (st.last) {
+    let ns = addDays(st.last.s, st.avgC);
+    while (ns < t && st.last.e) ns = addDays(ns, st.avgC);
+    next = fmt(ns);
+    const u = diff(t, ns);
+    until = !st.last.e ? 'กำลังมีอยู่' : u === 0 ? 'วันนี้' : u > 0 ? `อีก ${u} วัน` : '-';
+    if (st.last.s <= t) cycleDay = diff(st.last.s, t) + 1;
+  }
+  $('stats').innerHTML = `
+    <div class="stat"><div class="v">${st.ps.length}</div><div class="k">รอบที่บันทึก</div></div>
+    <div class="stat"><div class="v">${cycleDay}</div><div class="k">วันที่ของรอบปัจจุบัน</div></div>
+    <div class="stat"><div class="v">${st.avgL}</div><div class="k">มาเฉลี่ย (วัน)${st.hasL ? '' : ' *ค่าเริ่มต้น'}</div></div>
+    <div class="stat"><div class="v">${st.avgC}</div><div class="k">รอบเฉลี่ย (วัน)${st.hasC ? '' : ' *ค่าเริ่มต้น'}</div></div>
+    <div class="stat wide"><div class="k">คาดว่ารอบถัดไปจะมา</div><div class="v">${next}</div><div class="k">${until}</div></div>`;
+}
+
+function renderYearStats(st) {
+  $('yearTitle').textContent = `สรุปทั้งปี ${view.y + 543}`;
+  const inYear = p => p.s.startsWith(view.y + '-');
+  const ps = st.ps.filter(inYear);
+  const done = ps.filter(p => p.e).map(lenOf);
+  const cyc = st.ps.map((p, i) => i > 0 && inYear(p) ? diff(st.ps[i - 1].s, p.s) : null).filter(x => x !== null);
+  const mn = done.length ? Math.min(...done) : '-', mx = done.length ? Math.max(...done) : '-';
+  $('yearStats').innerHTML = `
+    <div class="stat"><div class="v">${ps.length}</div><div class="k">จำนวนรอบ</div></div>
+    <div class="stat"><div class="v">${ps.reduce((s, p) => s + lenOf(p), 0)}</div><div class="k">รวมวันที่มี</div></div>
+    <div class="stat"><div class="v">${done.length ? avg(done).toFixed(1) : '-'}</div><div class="k">มาเฉลี่ย (วัน)</div></div>
+    <div class="stat"><div class="v">${cyc.length ? avg(cyc).toFixed(1) : '-'}</div><div class="k">รอบเฉลี่ย (วัน)</div></div>
+    <div class="stat wide"><div class="k">สั้นสุด / นานสุดกว่าจะหาย</div><div class="v">${mn} / ${mx} วัน</div></div>`;
+}
+
+/* ---------- editing ---------- */
+function onDay(d) {
+  const ps = sorted();
+  const inP = periodAt(d);
+  if (mode === 'start') {
+    if (inP) return toast('วันนี้อยู่ในรอบที่บันทึกไว้แล้ว');
+    const open = ps.find(p => !p.e && p.s < d);
+    if (open) return toast(`รอบที่มา ${fmt(open.s)} ยังไม่ได้ติ๊กวันหาย`);
+    data.periods.push({ s: d, e: null });
+    toast(`♥ บันทึกวันมา ${fmt(d)} แล้ว ต่อไปติ๊กวันหายนะ`);
+    setMode('end');
+  } else if (mode === 'end') {
+    const prev = [...ps].reverse().find(p => p.s <= d);
+    if (!prev) return toast('กรุณาติ๊กวันที่มาก่อนนะ ♡');
+    const nxt = ps.find(p => p.s > prev.s);
+    if (nxt && d >= nxt.s) return toast('วันหายต้องอยู่ก่อนรอบถัดไป');
+    const len = diff(prev.s, d) + 1;
+    if (len > 15 && !confirm(`รอบนี้จะยาว ${len} วัน (มา ${fmt(prev.s)}) ยืนยันหรือไม่?`)) return;
+    prev.e = d;
+    toast(`♥ มา ${fmt(prev.s)} หาย ${fmt(d)} รวม ${len} วัน`);
+    setMode('start');
+  } else {
+    if (!inP) return toast('วันนี้ไม่มีบันทึก');
+    if (!confirm(`ลบรอบที่มา ${fmt(inP.s)} ใช่ไหม?`)) return;
+    data.periods = data.periods.filter(p => p !== inP);
+    toast('ลบรอบแล้ว');
+  }
+  save(); render();
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode').forEach(el => el.classList.toggle('active', el.dataset.mode === m));
+}
+
+function fillYears() {
+  const sel = $('selYear');
+  const ys = new Set(); for (let y = now.getFullYear() - 5; y <= now.getFullYear() + 3; y++) ys.add(y);
+  data.periods.forEach(p => ys.add(+p.s.slice(0, 4))); ys.add(view.y);
+  sel.innerHTML = [...ys].sort((a, b) => a - b).map(y => `<option value="${y}">${y + 543} (${y})</option>`).join('');
+  sel.value = view.y;
+}
+
+function shift(n) {
+  if (yearMode) view.y += n;
+  else { view.m += n; if (view.m < 0) { view.m = 11; view.y--; } if (view.m > 11) { view.m = 0; view.y++; } }
+  render();
+  const box = $(yearMode ? 'yearView' : 'days');
+  box.style.setProperty('--dx', n > 0 ? '40px' : '-40px');
+  box.classList.remove('anim'); void box.offsetWidth; box.classList.add('anim');
+}
+
+let touchX = null, touchY = 0;
+['monthView', 'yearView'].forEach(id => {
+  $(id).addEventListener('touchstart', e => { const t = e.changedTouches[0]; touchX = t.clientX; touchY = t.clientY; }, { passive: true });
+  $(id).addEventListener('touchend', e => {
+    if (touchX === null) return;
+    const t = e.changedTouches[0], dx = t.clientX - touchX, dy = t.clientY - touchY;
+    touchX = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) shift(dx < 0 ? 1 : -1);
+  }, { passive: true });
+});
+
+let toastTimer;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ---------- events ---------- */
+$('selMonth').innerHTML = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+$('prev').onclick = () => shift(-1);
+$('next').onclick = () => shift(1);
+$('selMonth').onchange = e => { view.m = +e.target.value; render(); };
+$('selYear').onchange = e => { view.y = +e.target.value; render(); };
+$('btnToday').onclick = () => { view = { y: now.getFullYear(), m: now.getMonth() }; render(); };
+$('btnView').onclick = () => { yearMode = !yearMode; render(); };
+document.querySelectorAll('.mode').forEach(el => el.onclick = () => setMode(el.dataset.mode));
+document.addEventListener('keydown', e => {
+  if (['SELECT', 'INPUT'].includes(e.target.tagName) || $('dlg').open) return;
+  if (e.key === 'ArrowLeft') shift(-1);
+  if (e.key === 'ArrowRight') shift(1);
+});
+$('btnReload').onclick = () => refresh('โหลดข้อมูลล่าสุดแล้ว');
+
+$('btnEdit').onclick = () => {
+  $('ghRepo').value = (gh && gh.repo) || guessRepo();
+  $('ghBranch').value = (gh && gh.branch) || 'main';
+  $('ghToken').value = '';
+  $('dlg').showModal();
+};
+$('dlgCancel').onclick = () => $('dlg').close();
+$('dlgLocal').onclick = async () => {
+  gh = null; localStorage.removeItem(GH_KEY);
+  localStorage.setItem(LOCAL_KEY, await encryptedText());
+  $('dlg').close(); setEditing(true);
+  setStatus('แก้ในเครื่องนี้ เสร็จแล้วกด "ดาวน์โหลด data.json" ไปแทนที่ไฟล์เดิมใน GitHub');
+};
+$('dlgOk').onclick = async () => {
+  const repo = $('ghRepo').value.trim(), branch = $('ghBranch').value.trim() || 'main', token = $('ghToken').value.trim();
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo) || !token) return toast('กรอก repository และ token ให้ครบ');
+  gh = { repo, branch, token };
+  try {
+    await loadData();
+    localStorage.setItem(GH_KEY, JSON.stringify(gh));
+    $('dlg').close(); setEditing(true); render();
+    setStatus('✓ เชื่อม GitHub แล้ว ติ๊กปฏิทินแล้วระบบจะบันทึกให้อัตโนมัติ', 'ok');
+  } catch (e) {
+    gh = null; toast('เชื่อมไม่สำเร็จ: ' + e.message);
+  }
+};
+$('btnExit').onclick = () => {
+  gh = null; localStorage.removeItem(GH_KEY);
+  setEditing(false); refresh('ออกจากโหมดแก้ไขแล้ว');
+};
+
+$('btnExport').onclick = async () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([await encryptedText()], { type: 'application/json' }));
+  a.download = 'data.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$('btnImport').onclick = () => $('file').click();
+$('file').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (isEnc(d)) data = await decryptData(d);
+    else if (Array.isArray(d.periods)) data = normalize(d);
+    else throw 0;
+    save(); render(); toast('♥ นำเข้าข้อมูลเรียบร้อย');
+  } catch (err) { toast(err instanceof WrongPass ? 'ไฟล์นี้ใช้รหัสผ่านอื่น' : 'ไฟล์ไม่ถูกต้อง'); }
+  e.target.value = '';
+};
+$('btnClear').onclick = () => {
+  if (!confirm('ล้างข้อมูลทั้งหมดใช่ไหม? (ทุกคนจะไม่เห็นข้อมูลด้วย)')) return;
+  data = { periods: [] }; save(); render(); toast('ล้างข้อมูลแล้ว');
+};
+
+(function hearts() {
+  const box = $('hearts'), sym = ['♥', '♡', '❤'];
+  for (let i = 0; i < 22; i++) {
+    const s = document.createElement('span');
+    s.textContent = sym[i % 3];
+    s.style.left = Math.random() * 100 + 'vw';
+    s.style.fontSize = 12 + Math.random() * 26 + 'px';
+    s.style.animationDuration = 10 + Math.random() * 14 + 's';
+    s.style.animationDelay = -Math.random() * 20 + 's';
+    box.appendChild(s);
+  }
+})();
+
+$('lockForm').onsubmit = e => { e.preventDefault(); const pw = $('pin').value.trim(); if (pw) unlock(pw); else $('pin').focus(); };
+$('btnLock').onclick = () => lockApp();
+
+setEditing(!!(gh && gh.token));
+render();
+if (pass) unlock(pass); else $('pin').focus();
+</script>
+</body>
+</html>
